@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>hashchange</title>
+</head>
+<body>
+<style>
+    .panel {
+        display: none;
+    }
+</style>
+<!--选项卡-->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 col-lg-offset-2">
+            <ul class="nav nav-tabs">
+                <li role="presentation" class=" active"><a href="#abc">已有信息</a></li>
+                <li role="presentation"><a href="#def">上传信息</a></li>
+            </ul>
+            <div id="abc" class="panel panel-default">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>年龄</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div id="def" class="panel panel-default">
+                <form>
+                    <div class="form-group">
+                        <label for="sname">姓名</label>
+                        <input type="text" class="form-control" id="sname" placeholder="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="sex">性别</label>
+                        <input type="text" class="form-control" id="sex" placeholder="sex">
+                    </div>
+                    <div class="form-group">
+                        <label for="age">年龄</label>
+                        <input type="number" class="form-control" id="age" placeholder="age">
+                    </div>
+
+                    <button type="submit" class="btn btn-default">提交</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+<script>
+
+    //选项卡内容
+    $(function () {
+        let hash = location.hash;
+        $(window).on('hashchange', function () {
+            let hash = location.hash;
+
+            $('.panel').css('display', 'none').filter(hash).css('display', 'block');
+
+            $('a[href="' + hash + '"]').parent('li').addClass('active').siblings('li').removeClass('active');
+        });
+        if (!hash) {
+            location.hash = '#abc';
+        } else {
+            $(window).triggerHandler("hashchange");
+        }
+    });
+    //表单
+    $('form').on('submit', function (e) {
+        e.preventDefault();
+        //$(this).serialize();//用方法提交数据
+        let inputs = $('#def .form-control');
+        let arr = [];//用数组提交数据push到arr中循环遍历出来
+        for (let i = 0; i < inputs.length; i++) {
+            arr.push(inputs[i].value.trim());
+        }
+        /*  inputs.forEach(ele=>{
+              ele.val();
+          })*/
+        $.ajax({
+            type: 'POST',
+            url: 'insertvalue.php',
+            data: {sname: arr[0], sex: arr[1], age: arr[2]},
+            // data: $(this).serialize(),
+            dataType: 'json',
+            // context: this,
+            success: function (res) {
+                console.log(1);
+                if (res.code === 200) {
+                    show();
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+        return false;
+    })
+    //获取数据
+    show();
+    function show(){
+        $.ajax({
+            type: 'GET',
+            url: 'select.php',
+            dataType: 'json',
+            success: function (res) {
+                if (res.code == 200 && res.data.length) {
+                    render(res.data);
+                }
+            }
+        });
+    }
+
+    function render(arr) {
+        let str = '';
+        arr.forEach(ele => {
+            str += `
+            <tr id="${ele.sid}">
+            <td>${ele.sid}</td>
+            <td>${ele.sname}</td>
+            <td>${ele.sex}</td>
+            <td>${ele.age}</td>
+            <td><button type="submit" class="btn btn-danger">删除</button></td>
+            </tr>
+        `;
+        })
+        $('tbody').html(str);
+
+        $('tbody').on('click','.btn-danger',function(){
+            let id = $(this).parents('tr').attr("id");
+            console.log(id);
+            $.ajax({
+                type:'POST',
+                url:'delete.php',
+                dataType:'json',
+                data:{idd:id},
+                success: function (res) {
+                    if(res.code == 200){
+                        $('#'+id).remove();
+                    }else {
+                        console.log(res.msg);
+                    }
+                }
+            })
+        })
+
+    }
+
+    //选项卡传入的数据
+    /* window.addEventListener("load", function () {
+         $('.btn').click(function (e) {
+             e.preventDefault();//阻止默认行为
+             //获取数据
+             let inputs = document.querySelectorAll('input');
+             console.log(inputs);
+             let sname = inputs[0].value.trim();
+             let sex = inputs[1].value.trim();
+             let age = inputs[2].value.trim();
+             //提交
+             let xmlh = new XMLHttpRequest();
+             xmlh.open('POST', 'insertvalue.php');
+             xmlh.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+             xmlh.responseType = 'json';
+             xmlh.send('sname=' + sname + '&sex=' + sex+'&age='+age);
+
+         })
+     })*/
+
+
+</script>
